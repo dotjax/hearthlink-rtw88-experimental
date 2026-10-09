@@ -1,0 +1,3 @@
+# Unified diff context has intentional leading spaces and tabs.
+# Check patch code with kernel checkpatch rather than Git text-file whitespace.
+patches/*.patch -whitespace

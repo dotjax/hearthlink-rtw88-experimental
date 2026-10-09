@@ -1,0 +1,90 @@
+Subject: [PATCH 3/3] wifi: rtw88: wait safely for USB reserved-page transfer
+Local experimental implementation inspired by Mohammed Afifi/Bitterblue
+Smith PR455.
+Keep URB ownership and kill/drain it before returning, including timeout;
+preserve URB_ZERO_PACKET.
+Normal TX/H2C remain asynchronous. Not submitted upstream or runtime-
+tested.
+
+---
+--- a/drivers/net/wireless/realtek/rtw88/usb.c
++++ b/drivers/net/wireless/realtek/rtw88/usb.c
+@@ -2,6 +2,7 @@
+ /* Copyright(c) 2018-2019  Realtek Corporation
+  */
+ 
++#include <linux/completion.h>
+ #include <linux/module.h>
+ #include <linux/usb.h>
+ #include <linux/mutex.h>
+@@ -389,6 +390,57 @@
+ 	return ret;
+ }
+ 
++struct rtw_usb_sync_write {
++	struct completion done;
++	int status;
++};
++
++static void rtw_usb_write_sync_complete(struct urb *urb)
++{
++	struct rtw_usb_sync_write *write = urb->context;
++
++	write->status = urb->status;
++	if (!write->status && urb->actual_length != urb->transfer_buffer_length)
++		write->status = -EREMOTEIO;
++	complete(&write->done);
++}
++
++static int rtw_usb_write_port_sync(struct rtw_dev *rtwdev, u8 qsel,
++				   struct sk_buff *skb)
++{
++	struct rtw_usb *rtwusb = rtw_get_usb_priv(rtwdev);
++	struct rtw_usb_sync_write write;
++	struct urb *urb;
++	int ep, ret;
++
++	ep = qsel_to_ep(rtwusb, qsel);
++	if (ep < 0)
++		return ep;
++	urb = usb_alloc_urb(0, GFP_KERNEL);
++	if (!urb)
++		return -ENOMEM;
++
++	init_completion(&write.done);
++	write.status = -EINPROGRESS;
++	usb_fill_bulk_urb(urb, rtwusb->udev,
++			  usb_sndbulkpipe(rtwusb->udev, rtwusb->out_ep[ep]),
++			  skb->data, skb->len, rtw_usb_write_sync_complete,
++			  &write);
++	urb->transfer_flags |= URB_ZERO_PACKET;
++	ret = usb_submit_urb(urb, GFP_KERNEL);
++	if (!ret) {
++		if (!wait_for_completion_timeout(&write.done, secs_to_jiffies(5)))
++			ret = -ETIMEDOUT;
++		else
++			ret = write.status;
++		/* Drain the callback before its stack context or skb can go away. */
++		usb_kill_urb(urb);
++	}
++	usb_free_urb(urb);
++
++	return ret;
++}
++
+ static bool rtw_usb_tx_agg_skb(struct rtw_usb *rtwusb, struct sk_buff_head *list)
+ {
+ 	struct rtw_dev *rtwdev = rtwusb->rtwdev;
+@@ -522,6 +574,12 @@
+ 	memset(skb->data, 0, chip->tx_pkt_desc_sz);
+ 	rtw_tx_fill_tx_desc(rtwdev, pkt_info, skb);
+ 	rtw_tx_fill_txdesc_checksum(rtwdev, pkt_info, skb->data);
++
++	if (qsel == TX_DESC_QSEL_BEACON) {
++		ret = rtw_usb_write_port_sync(rtwdev, qsel, skb);
++		dev_kfree_skb_any(skb);
++		return ret;
++	}
+ 
+ 	ret = rtw_usb_write_port(rtwdev, qsel, skb,
+ 				 rtw_usb_write_port_complete, skb);

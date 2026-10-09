@@ -1,0 +1,18 @@
+{
+  "debian_source_package": "linux",
+  "debian_package_version": "7.2.8-1",
+  "tested_kernel_release": "7.2.8+deb14-amd64",
+  "source_file_sha256": {
+    "drivers/net/wireless/realtek/rtw88/usb.c": "64d44452d287386bdb0de219c6a53ab288aec7762983df6929e798b2bc610a3b",
+    "drivers/net/wireless/realtek/rtw88/usb.h": "eb30ffd421bbc4e8bc4234dc094a2f3fc9156dfd3e7f8027cb1116a51693797e"
+  },
+  "download_sha256": {
+    "libbpf1_1%3a1.7.0-1_amd64.deb": "5bf02b61d0a01747bbe15b1fe632734365b4697fe1ae5fa1f3d408132427fe2b",
+    "pahole_1.32-1_amd64.deb": "2eea79813df2eb0109e4acf182584b2d94fc24841847c477fe44e340c0df74ea",
+    "linux-headers-7.2.8+deb14-amd64_7.2.8-1_amd64.deb": "fb988572245f774bc8529299a76d418dab5d7b5e1d64bc328d5028c8743e882d",
+    "linux-source-7.2_7.2.8-1_all.deb": "9bde5cf78bc462252efcd3c18ca09e23829d1bf2461781029e377119fd21ed03",
+    "linux-headers-7.2.8+deb14-common_7.2.8-1_all.deb": "8772285c09cfea3f18395140755f2cf03d9174d5544ec280022fa0728396afed",
+    "libdwarves1_1.32-1_amd64.deb": "788c01b45269a2c975d517f9c68fb2e3c6728bb9243cea8fe6aa9baf46c50917",
+    "linux-kbuild-7.2.8+deb14_7.2.8-1_amd64.deb": "fa1d7cc3ee9da956e8a160d02bdaeba225423a72e172664930695b45e50615e7"
+  }
+}
