@@ -40,6 +40,14 @@ Select a fresh `--output` for another attempt; existing builds are not overwritt
 `--prepare-only` skips compilation. `--variant queue-and-sync` adds the
 hardware-untested patch 0003. The helper neither installs nor loads modules.
 
+All 41 driver source/header inputs are checked and only those verified files
+are copied, excluding stale objects and source-supplied build files. The
+generated kernel release and nonempty `Module.symvers` are checked before any
+output is created. These checks do not replace obtaining authenticated matching
+header packages. Each output has `build-info.json` with patch, source-manifest,
+symbol-table, and resulting module hashes. A failed build remains marked
+`compiled: false`.
+
 Inspect `modinfo /absolute/path/to/rtw88_usb.ko`. Vermagic must match the running
 kernel, though that alone does not prove safety. Signed-module enforcement may
 reject unsigned modules; use your distribution's supported signing procedure
@@ -57,6 +65,7 @@ over the affected Wi-Fi connection.
 # After stopping the affected connection:
 sudo -n modprobe -r rtw88_8822bu
 sudo -n modprobe -r rtw88_usb
+sudo -n modprobe -a usbcore mac80211 rtw88_core
 sudo -n insmod /absolute/path/to/locally-built/rtw88_usb.ko
 sudo -n modprobe rtw88_8822bu
 # Reactivate the connection with its existing network manager.
@@ -65,6 +74,12 @@ sudo -n modprobe rtw88_8822bu
 If any step fails, restore stock modules before continuing. The historical
 test also reset the specific wedged USB adapter. Identify the actual device
 before any reset; a generic reset script is deliberately not supplied.
+
+The dependency reload is necessary because `modprobe -r` may remove unused
+dependencies, while `insmod` does not load them. Verify the locally built
+module's dependencies with `modinfo -F depends` if adapting these instructions.
+Execute these steps individually and stop on failure; do not blindly paste
+the sequence into a shell that continues after errors.
 
 ## Rollback
 

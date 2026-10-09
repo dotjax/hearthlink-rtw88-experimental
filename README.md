@@ -64,6 +64,25 @@ The helper installs and loads nothing. Read
 [docs/BUILD-AND-ROLLBACK.md](docs/BUILD-AND-ROLLBACK.md) before a temporary load.
 The tested setup preserves the stock module on disk; reboot restores it.
 
+The helper now verifies all 41 copied source/header inputs and the target
+kernel release, ignores old build artifacts, and writes `build-info.json`
+with hashes identifying the experiment.
+
+## Health and performance snapshots
+
+```sh
+python3 scripts/diagnose.py --interface wlan0 --sample-seconds 5
+```
+
+This read-only helper reports USB state, driver/firmware information, traffic
+rates, and selected kernel-error counts. It creates no traffic and excludes
+raw logs and client identifiers. See [docs/DIAGNOSTICS.md](docs/DIAGNOSTICS.md)
+for limitations and private JSON output.
+
+Run helper regression checks with
+`python3 -m unittest discover -s tests -v`. These do not validate live driver
+stability or measure an improvement in throughput.
+
 ## License and reporting
 
 Distributed under **GPL-2.0-only**, using the original driver's GPL option.

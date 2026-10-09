@@ -31,6 +31,27 @@ page-pool state was not measured; the exact causal diagnosis remains unresolved.
   it also rejected an altered baseline and refused to overwrite an existing
   build directory.
 
+## Follow-up tooling review
+
+A second review on October 9 found that the original helper hashed only
+`usb.c`/`usb.h` while copying unchecked shared headers. An altered `main.h`
+layout was accepted in an isolated prepare-only reproduction. The corrected
+helper verifies all 41 copied source/header inputs and copies only their checked
+bytes. It excludes stale objects and source-supplied build files, checks the
+target kernel release, and records build provenance in `build-info.json`.
+The altered-header reproduction now fails before creating output.
+
+Both variants were rebuilt successfully after these changes. Their `usb.c` and
+`usb.h` still match the earlier experimental builds exactly. Eleven helper
+regression tests passed, including changed headers, stale build files, wrong
+kernel headers, reset/unavailable traffic counters, and journal permission/no-match
+handling. The new diagnostic helper produced a read-only snapshot on the tested
+adapter. These checks are not additional hardware tests of the experimental
+driver. No new module was loaded and no throughput improvement was measured.
+
+The temporary-load documentation now explicitly reloads required dependencies
+before `insmod`, since `modprobe -r` may remove unused dependencies.
+
 ## Temporary queue-only test
 
 At 03:01:33 CDT on October 9, patches 0001 and 0002 were loaded as an unsigned
